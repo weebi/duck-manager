@@ -1,4 +1,5 @@
 #!/bin/bash
+
 _token=""
 
 _login() {
@@ -40,12 +41,14 @@ _alias() {
     _access_token=$(echo "${_dashboard_data}" | jq -r .user.access_token)
 
     _address_data=$(curl -s https://quack.duckduckgo.com/api/email/addresses -H "Authorization: Bearer ${_access_token}" -X POST)
-    [[ -n "$_address_data" ]] && \
+    [[ -n "$_address_data" && $(jq ."error" <<< "$_address_data") = "null" ]] && \
     _address=$(echo "${_address_data}" | jq -r .address) && \
     echo "Your new alias is ${_address}@duck.com!"
 
-    [[ -z "$_address_data" ]] && \
-    echo "Something went wrong, try again."
+    [[ -z "$_address_data" || $(jq ."error" <<< "$_address_data") != "null" ]] && \
+    echo "Something went wrong, try again." && \
+    _login && \
+    _alias
 }
 
 [[ ! -s ~/.config/duck-manager.conf ]] && \
